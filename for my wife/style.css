@@ -1,0 +1,326 @@
+/* --- Base Styles & Palette --- */
+:root {
+    --bg-color: #fdf6fd;
+    --grid-bg: #f8f0f8;
+    --grid-line: #e8d8e8;
+    --cell-border: #d8b8d8;
+    --piece-pink: #f4a4c4;
+    --piece-pink-light: #f8c8d8;
+    --piece-pink-dark: #e090b0;
+    --piece-purple: #c4a4f4;
+    --piece-purple-light: #d8c8f8;
+    --piece-purple-dark: #b090e0;
+    --text-color: #5a4a5a;
+    --highlight-color: rgba(196, 164, 244, 0.4); /* Purpleish preview */
+    --invalid-highlight-color: rgba(244, 164, 196, 0.4); /* Pinkish/red preview for invalid */
+    --occupied-preview: #e0e0e0;
+    --clear-flash-color: white;
+    --cute-font: 'Nunito', sans-serif; /* Added Cuter Font */
+}
+
+html, body {
+    height: 100%; /* Ensure body can fill height */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--cute-font); /* Apply cute font */
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px; /* Padding around the entire page */
+    min-height: 100%; /* Take at least full viewport height */
+}
+
+h1, h2 {
+    color: var(--text-color);
+    text-align: center;
+    margin-bottom: 15px;
+}
+h1 { font-size: 2.2em; }
+h2 { font-size: 1.3em; }
+
+/* --- Game Layout - Make it Bigger --- */
+#game-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 25px;
+    align-items: flex-start; /* Align tops */
+    width: 95%; /* Use more horizontal space */
+    max-width: 1200px; /* Limit max width on very large screens */
+    margin: auto; /* Center container */
+    padding: 15px;
+    /* Removed min-height, let content dictate height */
+}
+
+#grid-board {
+    display: grid;
+    /* Grid columns/rows/size set by JS */
+    width: fit-content;
+    height: fit-content;
+    border: 3px solid var(--cell-border); /* Thicker border */
+    background-color: var(--grid-bg);
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+    max-width: 100%;
+    overflow: hidden;
+    flex-shrink: 0; /* Prevent grid from shrinking too easily */
+}
+
+#game-info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 200px; /* Slightly larger info area */
+    flex-grow: 1; /* Allow info area to take up remaining space */
+    max-width: 300px; /* Max width for info area */
+}
+
+.info-section {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--cell-border);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+}
+
+.score-section {
+    display: flex;
+    flex-direction: column; /* Stack score/highscore vertically */
+    gap: 5px;
+    text-align: center; /* Center text */
+}
+
+#score-area, #highscore-area {
+    font-size: 1.3em; /* Larger score font */
+    font-weight: bold;
+}
+
+.pieces-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center items */
+}
+
+/* --- Grid Cells --- */
+.cell {
+    /* Cell size set by JS */
+    border: 1px solid var(--grid-line);
+    background-color: var(--grid-bg);
+    box-sizing: border-box;
+    position: relative;
+    /* Smooth transitions for preview and clearing */
+    transition: background-color 0.15s ease-out, opacity 0.15s ease-out;
+}
+
+/* --- Popping Texture (Keep as before) --- */
+.cell.filled-pink, .piece-cell.filled-pink {
+    background-color: var(--piece-pink);
+    background-image: linear-gradient(to bottom, var(--piece-pink-light), var(--piece-pink));
+    border: 1px solid var(--piece-pink-dark);
+    border-top-color: var(--piece-pink-light);
+    border-left-color: var(--piece-pink-light);
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.3), inset -1px -1px 2px rgba(0, 0, 0, 0.1);
+}
+.cell.filled-purple, .piece-cell.filled-purple {
+    background-color: var(--piece-purple);
+    background-image: linear-gradient(to bottom, var(--piece-purple-light), var(--piece-purple));
+    border: 1px solid var(--piece-purple-dark);
+    border-top-color: var(--piece-purple-light);
+    border-left-color: var(--piece-purple-light);
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.3), inset -1px -1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Cell Preview & Clearing Animation --- */
+.cell.preview {
+    background-color: var(--highlight-color); /* Use the valid highlight color */
+    opacity: 0.8; /* Slightly more opaque preview */
+    /* Transition is already on the base .cell style */
+}
+.cell.preview.invalid {
+     background-color: var(--invalid-highlight-color); /* Use the invalid highlight color */
+     opacity: 0.7;
+}
+
+
+.cell.clearing {
+    animation: flashClear 0.4s ease-out;
+}
+@keyframes flashClear {
+    0%, 100% { background-color: var(--clear-flash-color); }
+    50% { background-color: var(--grid-bg); }
+}
+
+/* --- Piece Preview Area --- */
+#pieces {
+    display: flex;
+    flex-direction: row; /* Keep horizontal */
+    flex-wrap: wrap; /* Wrap if needed */
+    justify-content: center; /* Center pieces */
+    gap: 15px; /* More space between previews */
+    margin-bottom: 15px; /* Space before refresh button */
+    min-height: 60px;
+    width: 100%;
+}
+
+.piece-container {
+    border: 2px dashed var(--cell-border); /* Slightly thicker dashed border */
+    padding: 5px;
+    cursor: pointer;
+    display: grid;
+    width: fit-content;
+    height: fit-content;
+    background-color: var(--grid-bg);
+    border-radius: 4px;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), /* Elastic bounce */
+                box-shadow 0.2s ease,
+                border 0.2s ease;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Enhanced Selected State */
+.piece-container.selected {
+    border-style: solid;
+    border-width: 3px; /* Even thicker border */
+    border-color: var(--piece-purple-dark);
+    box-shadow: 0 0 12px 2px var(--piece-purple); /* Stronger, larger shadow */
+    transform: scale(1.15); /* Scale up more significantly */
+    z-index: 10; /* Bring selected piece slightly forward */
+    position: relative; /* Needed for z-index */
+}
+
+.piece-container.occupied {
+    background-color: var(--occupied-preview);
+    cursor: default;
+    border-style: solid;
+    border-width: 2px; /* Standard border */
+    border-color: #ccc;
+    transform: scale(1); /* Reset scale */
+    box-shadow: none; /* Reset shadow */
+    text-align: center;
+    font-size: 1.8em; /* Larger checkmark */
+    line-height: 1;
+    min-width: 50px; /* Consistent size for empty slot */
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.piece-cell {
+    /* Using fixed size set in JS is better than % for previews */
+    border: 1px solid var(--grid-line);
+    box-sizing: border-box;
+    /* width/height set by JS */
+}
+
+/* --- Buttons --- */
+button {
+    font-family: var(--cute-font); /* Apply cute font */
+    padding: 10px 18px; /* Larger buttons */
+    font-size: 1.1em; /* Larger text */
+    background-color: var(--piece-purple);
+    color: white;
+    border: none;
+    border-radius: 20px; /* Rounded corners */
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-weight: bold;
+}
+button:hover {
+    background-color: var(--piece-pink);
+    transform: translateY(-1px); /* Slight lift on hover */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+button:active {
+    transform: translateY(1px); /* Press down effect */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Refresh button specific style */
+#refresh-pieces-button {
+    font-size: 1em;
+    padding: 8px 15px;
+    background-color: #a8d8ea; /* A different pastel color - light blue? */
+    margin-top: 5px; /* Space from pieces */
+}
+#refresh-pieces-button:hover {
+     background-color: #91c4d8;
+}
+
+/* Control section styling (optional, if you want to group music button etc.) */
+.controls-section {
+    text-align: center; /* Center music button */
+}
+
+/* --- Game Over Message --- */
+#game-over {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(90, 74, 90, 0.92); /* More opaque */
+    color: white;
+    padding: 35px;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 1.8em; /* Larger text */
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    width: 85%;
+    max-width: 350px;
+}
+#game-over button { /* Style restart button */
+    margin-top: 20px;
+    font-size: 1em; /* Adjust size */
+    padding: 12px 20px;
+}
+.hidden { display: none; }
+
+
+/* --- Media Queries for Mobile Responsiveness --- */
+@media (max-width: 768px) { /* Adjust breakpoint for tablets/large phones */
+     #game-container {
+        flex-direction: column; /* Stack vertically */
+        align-items: center; /* Center items */
+        gap: 20px;
+        width: 98%; /* Almost full width */
+        padding: 10px;
+     }
+     #game-info {
+         order: -1; /* Info above grid on small screens */
+         flex-direction: column; /* Stack info sections */
+         align-items: center; /* Center info sections */
+         max-width: 90%; /* Limit info width */
+         width: 100%; /* Allow it to fill container */
+     }
+     .info-section {
+        width: 100%;
+        max-width: 400px; /* Limit max width of individual info sections */
+        box-sizing: border-box;
+     }
+      .score-section {
+        flex-direction: row; /* Score side-by-side */
+        justify-content: space-around;
+        font-size: 1.1em;
+     }
+     h1 { font-size: 1.8em; }
+     h2 { font-size: 1.2em; }
+     button { font-size: 1em; padding: 8px 15px; }
+     #game-over { font-size: 1.5em; padding: 25px; max-width: 85%; }
+}
+
+@media (max-width: 480px) { /* Further adjustments for small phones */
+    body { padding: 5px; }
+    #game-container { gap: 15px; }
+    #score-area, #highscore-area { font-size: 1em; }
+     h1 { font-size: 1.5em; }
+     .piece-container.selected { transform: scale(1.1); } /* Less extreme scale */
+     /* Consider reducing CELL_SIZE in JS dynamically for very small screens if overlap occurs */
+     #game-over { font-size: 1.2em; padding: 20px;}
+}
