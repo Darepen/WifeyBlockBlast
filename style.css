@@ -11,114 +11,120 @@
     --piece-purple-light: #d8c8f8;
     --piece-purple-dark: #b090e0;
     --text-color: #5a4a5a;
-    --highlight-color: rgba(196, 164, 244, 0.4); /* Purpleish preview */
-    --invalid-highlight-color: rgba(244, 164, 196, 0.4); /* Pinkish/red preview for invalid */
+    --highlight-color: rgba(196, 164, 244, 0.5); /* Purpleish preview */
+    --invalid-highlight-color: rgba(244, 164, 196, 0.5); /* Pinkish/red preview */
     --occupied-preview: #e0e0e0;
     --clear-flash-color: white;
-    --cute-font: 'Nunito', sans-serif; /* Added Cuter Font */
+    --modal-bg: rgba(90, 74, 90, 0.95); /* Darker modal bg */
+    --cute-font: 'Nunito', sans-serif;
 }
 
 html, body {
-    height: 100%; /* Ensure body can fill height */
+    height: 100%;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
 body {
-    font-family: var(--cute-font); /* Apply cute font */
+    font-family: var(--cute-font);
     background-color: var(--bg-color);
     color: var(--text-color);
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Stack title above game */
     align-items: center;
-    padding: 15px; /* Padding around the entire page */
-    min-height: 100%; /* Take at least full viewport height */
+    justify-content: flex-start; /* Align game towards top */
+    padding: 15px;
+    min-height: 100vh; /* Ensure takes full viewport height */
 }
 
-h1, h2 {
+h1 {
     color: var(--text-color);
     text-align: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px; /* More space below title */
+    font-size: 2.2em;
 }
-h1 { font-size: 2.2em; }
-h2 { font-size: 1.3em; }
+h2 {
+    font-size: 1.3em;
+    margin-top: 0; /* Reset margin for section headers */
+    margin-bottom: 10px;
+    text-align: center;
+}
 
-/* --- Game Layout - Make it Bigger --- */
+/* --- Centering Wrapper --- */
+#main-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px; /* Max overall width */
+}
+
+
+/* --- Game Layout --- */
 #game-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 25px;
-    align-items: flex-start; /* Align tops */
-    width: 95%; /* Use more horizontal space */
-    max-width: 1200px; /* Limit max width on very large screens */
-    margin: auto; /* Center container */
-    padding: 15px;
-    /* Removed min-height, let content dictate height */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    justify-content: center; /* Center items horizontally */
+    align-items: flex-start; /* Align tops of grid and pieces area */
+    gap: 30px; /* Increased gap */
+    width: 100%;
+    margin-top: 10px;
 }
 
+/* Score Area Above Grid */
+#score-area {
+    order: -1; /* Make score appear first visually */
+    width: 100%; /* Take full width above grid/pieces */
+    display: flex;
+    justify-content: center; /* Center score items */
+    gap: 30px; /* Space between score and high score */
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+    flex-wrap: wrap; /* Allow wrapping if needed */
+}
+
+/* Grid Board */
 #grid-board {
     display: grid;
     /* Grid columns/rows/size set by JS */
     width: fit-content;
     height: fit-content;
-    border: 3px solid var(--cell-border); /* Thicker border */
+    border: 3px solid var(--cell-border);
     background-color: var(--grid-bg);
-    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.15); /* Stronger shadow */
-    max-width: 100%;
-    overflow: hidden;
-    flex-shrink: 0; /* Prevent grid from shrinking too easily */
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.15);
+    overflow: hidden; /* Ensure cells don't overflow */
+    flex-shrink: 0; /* Prevent shrinking */
+    position: relative; /* For potential overlays or effects */
 }
 
-#game-info {
+/* Pieces and Controls Area */
+#pieces-and-controls {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    min-width: 200px; /* Slightly larger info area */
-    flex-grow: 1; /* Allow info area to take up remaining space */
-    max-width: 300px; /* Max width for info area */
-}
-
-.info-section {
-    background-color: white;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid var(--cell-border);
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
-}
-
-.score-section {
-    display: flex;
-    flex-direction: column; /* Stack score/highscore vertically */
-    gap: 5px;
-    text-align: center; /* Center text */
-}
-
-#score-area, #highscore-area {
-    font-size: 1.3em; /* Larger score font */
-    font-weight: bold;
-}
-
-.pieces-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Center items */
+    align-items: center; /* Center content */
+    gap: 15px;
+    min-width: 180px; /* Min width for pieces area */
+    max-width: 250px; /* Max width */
+    width: 30%; /* Relative width */
+    flex-grow: 1; /* Allow some growth */
 }
 
 /* --- Grid Cells --- */
 .cell {
-    /* Cell size set by JS */
     border: 1px solid var(--grid-line);
     background-color: var(--grid-bg);
     box-sizing: border-box;
     position: relative;
-    /* Smooth transitions for preview and clearing */
-    transition: background-color 0.15s ease-out, opacity 0.15s ease-out;
+    /* Smooth transitions */
+    transition: background-color 0.1s ease-out, opacity 0.1s ease-out;
 }
 
-/* --- Popping Texture (Keep as before) --- */
+/* Filled Cell Textures */
 .cell.filled-pink, .piece-cell.filled-pink {
+    /* ... (styles remain the same) ... */
     background-color: var(--piece-pink);
     background-image: linear-gradient(to bottom, var(--piece-pink-light), var(--piece-pink));
     border: 1px solid var(--piece-pink-dark);
@@ -127,6 +133,7 @@ h2 { font-size: 1.3em; }
     box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.3), inset -1px -1px 2px rgba(0, 0, 0, 0.1);
 }
 .cell.filled-purple, .piece-cell.filled-purple {
+    /* ... (styles remain the same) ... */
     background-color: var(--piece-purple);
     background-image: linear-gradient(to bottom, var(--piece-purple-light), var(--piece-purple));
     border: 1px solid var(--piece-purple-dark);
@@ -135,110 +142,123 @@ h2 { font-size: 1.3em; }
     box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.3), inset -1px -1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* --- Cell Preview & Clearing Animation --- */
+/* --- Cell Preview & Clearing --- */
 .cell.preview {
-    background-color: var(--highlight-color); /* Use the valid highlight color */
-    opacity: 0.8; /* Slightly more opaque preview */
-    /* Transition is already on the base .cell style */
+    background-color: var(--highlight-color);
+    opacity: 0.85; /* Slightly more opaque */
+    z-index: 1; /* Ensure preview is above grid lines maybe */
 }
 .cell.preview.invalid {
-     background-color: var(--invalid-highlight-color); /* Use the invalid highlight color */
-     opacity: 0.7;
+     background-color: var(--invalid-highlight-color);
+     opacity: 0.75;
 }
-
 
 .cell.clearing {
-    animation: flashClear 0.4s ease-out;
+    animation: flashClear 0.3s ease-out;
 }
 @keyframes flashClear {
-    0%, 100% { background-color: var(--clear-flash-color); }
-    50% { background-color: var(--grid-bg); }
+    0%, 100% { background-color: var(--clear-flash-color); opacity: 1; }
+    50% { background-color: var(--grid-bg); opacity: 0.5; }
+}
+
+/* Shake animation for invalid drop */
+.shake {
+  animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+  transform: translate3d(0, 0, 0);
+}
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+  40%, 60% { transform: translate3d(3px, 0, 0); }
 }
 
 /* --- Piece Preview Area --- */
 #pieces {
     display: flex;
-    flex-direction: row; /* Keep horizontal */
-    flex-wrap: wrap; /* Wrap if needed */
-    justify-content: center; /* Center pieces */
-    gap: 15px; /* More space between previews */
-    margin-bottom: 15px; /* Space before refresh button */
-    min-height: 60px;
+    flex-direction: row; /* Horizontal layout */
+    flex-wrap: wrap; /* Allow wrapping */
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    min-height: 60px; /* Ensure space even if empty */
     width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
 }
 
 .piece-container {
-    border: 2px dashed var(--cell-border); /* Slightly thicker dashed border */
+    border: 2px dashed var(--cell-border);
     padding: 5px;
-    cursor: pointer;
-    display: grid;
+    cursor: grab; /* Indicate draggable */
+    display: grid; /* Use grid for internal cells */
     width: fit-content;
     height: fit-content;
-    background-color: var(--grid-bg);
+    background-color: rgba(255, 255, 255, 0.5); /* Slightly transparent bg */
     border-radius: 4px;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), /* Elastic bounce */
-                box-shadow 0.2s ease,
-                border 0.2s ease;
+    transition: transform 0.1s ease-out, box-shadow 0.2s ease;
     box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
 }
-
-/* Enhanced Selected State */
-.piece-container.selected {
-    border-style: solid;
-    border-width: 3px; /* Even thicker border */
-    border-color: var(--piece-purple-dark);
-    box-shadow: 0 0 12px 2px var(--piece-purple); /* Stronger, larger shadow */
-    transform: scale(1.15); /* Scale up more significantly */
-    z-index: 10; /* Bring selected piece slightly forward */
-    position: relative; /* Needed for z-index */
+.piece-container:active {
+    cursor: grabbing;
 }
 
+/* Style for the piece being dragged */
+.piece-container.dragging {
+    opacity: 0.5;
+    border-style: solid;
+    box-shadow: 0 0 10px var(--piece-purple);
+    transform: scale(1.1);
+}
+
+/* Used piece slot */
 .piece-container.occupied {
     background-color: var(--occupied-preview);
     cursor: default;
     border-style: solid;
-    border-width: 2px; /* Standard border */
     border-color: #ccc;
-    transform: scale(1); /* Reset scale */
-    box-shadow: none; /* Reset shadow */
+    transform: scale(1);
+    box-shadow: none;
     text-align: center;
-    font-size: 1.8em; /* Larger checkmark */
+    font-size: 1.8em;
     line-height: 1;
-    min-width: 50px; /* Consistent size for empty slot */
+    min-width: 50px; /* Consistent size */
     min-height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #aaa;
 }
 
 .piece-cell {
-    /* Using fixed size set in JS is better than % for previews */
+    /* Size set by JS */
     border: 1px solid var(--grid-line);
     box-sizing: border-box;
-    /* width/height set by JS */
+    background-color: transparent; /* Ensure empty preview cells are transparent */
 }
 
 /* --- Buttons --- */
 button {
-    font-family: var(--cute-font); /* Apply cute font */
-    padding: 10px 18px; /* Larger buttons */
-    font-size: 1.1em; /* Larger text */
+    font-family: var(--cute-font);
+    padding: 10px 18px;
+    font-size: 1.1em;
     background-color: var(--piece-purple);
     color: white;
     border: none;
-    border-radius: 20px; /* Rounded corners */
+    border-radius: 20px;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     font-weight: bold;
+    text-align: center;
 }
 button:hover {
     background-color: var(--piece-pink);
-    transform: translateY(-1px); /* Slight lift on hover */
+    transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(0,0,0,0.15);
 }
 button:active {
-    transform: translateY(1px); /* Press down effect */
+    transform: translateY(1px);
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
@@ -246,81 +266,162 @@ button:active {
 #refresh-pieces-button {
     font-size: 1em;
     padding: 8px 15px;
-    background-color: #a8d8ea; /* A different pastel color - light blue? */
-    margin-top: 5px; /* Space from pieces */
+    background-color: #a8d8ea; /* Light blue */
+    margin-top: auto; /* Pushes audio controls down if space */
 }
 #refresh-pieces-button:hover {
      background-color: #91c4d8;
 }
 
-/* Control section styling (optional, if you want to group music button etc.) */
-.controls-section {
-    text-align: center; /* Center music button */
+/* --- Audio Controls --- */
+.audio-controls {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--cell-border);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 15px;
+}
+.audio-controls h2 {
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap; /* Allow wrapping within group */
+}
+.control-group label {
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+.control-group button {
+    font-size: 0.8em;
+    padding: 5px 10px;
+    border-radius: 15px;
+    flex-shrink: 0;
+}
+.control-group input[type="range"] {
+    flex-grow: 1;
+    cursor: pointer;
+    height: 8px;
+    background: var(--grid-line);
+    border-radius: 5px;
+    appearance: none; /* Override default look */
+    -webkit-appearance: none;
+}
+/* Style the thumb (slider handle) */
+.control-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--piece-purple);
+    border-radius: 50%;
+    cursor: pointer;
+}
+.control-group input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--piece-purple);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
 }
 
-/* --- Game Over Message --- */
-#game-over {
+
+/* --- Game Over / Second Chance Modals --- */
+.modal {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgba(90, 74, 90, 0.92); /* More opaque */
+    background-color: var(--modal-bg);
     color: white;
-    padding: 35px;
+    padding: 30px 40px; /* More padding */
     border-radius: 15px;
     text-align: center;
-    font-size: 1.8em; /* Larger text */
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+    font-size: 1.3em; /* Slightly smaller base font */
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5); /* Softer shadow */
     z-index: 100;
-    width: 85%;
-    max-width: 350px;
+    width: 90%;
+    max-width: 400px; /* Wider max modal */
+    box-sizing: border-box;
 }
-#game-over button { /* Style restart button */
-    margin-top: 20px;
-    font-size: 1em; /* Adjust size */
+.modal h2 {
+    font-size: 1.5em; /* Relative to modal font size */
+    margin-bottom: 15px;
+    color: white;
+}
+.modal p {
+    margin-bottom: 25px;
+    font-size: 1.1em;
+    line-height: 1.4;
+}
+.modal button {
+    margin: 10px 5px 0 5px; /* Spacing around buttons */
+    font-size: 0.9em;
     padding: 12px 20px;
 }
+.modal button:first-of-type { /* Style primary action differently? */
+    background-color: var(--piece-pink);
+}
+.modal button:first-of-type:hover {
+     background-color: #f8c8d8;
+}
+
 .hidden { display: none; }
 
 
-/* --- Media Queries for Mobile Responsiveness --- */
-@media (max-width: 768px) { /* Adjust breakpoint for tablets/large phones */
-     #game-container {
-        flex-direction: column; /* Stack vertically */
-        align-items: center; /* Center items */
+/* --- Media Queries for Responsiveness --- */
+@media (max-width: 768px) {
+    h1 { font-size: 1.8em; margin-bottom: 15px;}
+    #score-area {
+        font-size: 1.2em;
         gap: 20px;
-        width: 98%; /* Almost full width */
-        padding: 10px;
+        margin-bottom: 15px;
+    }
+    #game-container {
+        flex-direction: column; /* Stack grid and pieces */
+        align-items: center; /* Center stack */
+        gap: 20px;
+    }
+    #grid-board {
+       order: 1; /* Grid below score */
+       max-width: 95%; /* Ensure grid fits */
+    }
+     #pieces-and-controls {
+       order: 2; /* Pieces below grid */
+       width: 90%; /* Wider pieces area */
+       max-width: 400px;
+       min-width: unset;
+       margin-top: 10px;
      }
-     #game-info {
-         order: -1; /* Info above grid on small screens */
-         flex-direction: column; /* Stack info sections */
-         align-items: center; /* Center info sections */
-         max-width: 90%; /* Limit info width */
-         width: 100%; /* Allow it to fill container */
+     .audio-controls {
+         margin-top: 10px;
      }
-     .info-section {
-        width: 100%;
-        max-width: 400px; /* Limit max width of individual info sections */
-        box-sizing: border-box;
-     }
-      .score-section {
-        flex-direction: row; /* Score side-by-side */
-        justify-content: space-around;
-        font-size: 1.1em;
-     }
-     h1 { font-size: 1.8em; }
-     h2 { font-size: 1.2em; }
-     button { font-size: 1em; padding: 8px 15px; }
-     #game-over { font-size: 1.5em; padding: 25px; max-width: 85%; }
+     .modal { font-size: 1.1em; padding: 25px 20px; }
+     .modal h2 { font-size: 1.4em; }
+     .modal p { font-size: 1em; }
 }
 
-@media (max-width: 480px) { /* Further adjustments for small phones */
-    body { padding: 5px; }
+@media (max-width: 480px) {
+    body { padding: 10px 5px; } /* Less padding */
+    h1 { font-size: 1.5em; }
+    #score-area { font-size: 1em; gap: 15px; }
     #game-container { gap: 15px; }
-    #score-area, #highscore-area { font-size: 1em; }
-     h1 { font-size: 1.5em; }
-     .piece-container.selected { transform: scale(1.1); } /* Less extreme scale */
-     /* Consider reducing CELL_SIZE in JS dynamically for very small screens if overlap occurs */
-     #game-over { font-size: 1.2em; padding: 20px;}
+    #pieces { gap: 10px; } /* Less gap between pieces */
+    button { font-size: 1em; padding: 8px 15px; } /* Smaller buttons */
+    #refresh-pieces-button { padding: 6px 12px; font-size: 0.9em; }
+     .modal { font-size: 1em; padding: 20px 15px; width: 95%;}
+     .modal h2 { font-size: 1.3em; }
+     .modal p { font-size: 0.9em; margin-bottom: 15px;}
+     .modal button { font-size: 0.8em; padding: 10px 15px; }
+     .control-group { gap: 5px; } /* Tighter audio controls */
+     .control-group label { font-size: 0.8em;}
+     .control-group button { font-size: 0.7em; padding: 4px 8px;}
 }
