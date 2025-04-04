@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridBoard = document.getElementById('grid-board');
     const scoreDisplay = document.getElementById('score');
     const highscoreDisplay = document.getElementById('highscore');
-    const piecesContainer = document.getElementById('pieces');
+    const piecesContainer = document.getElementById('pieces'); // Container for piece previews
     const gameOverDisplay = document.getElementById('game-over');
     const finalScoreDisplay = document.getElementById('final-score');
     const restartButton = document.getElementById('restart-button');
@@ -11,8 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const secondChancePrompt = document.getElementById('second-chance-prompt');
     const secondChanceYesButton = document.getElementById('second-chance-yes-button');
     const secondChanceNoButton = document.getElementById('second-chance-no-button');
+    const settingsPanel = document.getElementById('settings-panel'); // Get settings panel
+    const settingsToggleButton = document.getElementById('settings-toggle-button'); // Get toggle button
+    const closeSettingsButton = document.getElementById('close-settings-button'); // Get close button
 
-    // Audio Elements & Controls
+    // Audio Elements & Controls (inside settings panel now)
     const bgMusic = document.getElementById('bg-music');
     const sfxPlace = document.getElementById('sfx-place');
     const sfxClear = document.getElementById('sfx-clear');
@@ -25,14 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Game Settings ---
     const GRID_WIDTH = 9;
     const GRID_HEIGHT = 9;
-    let CELL_SIZE = 40; // Default, will be recalculated
-    let PREVIEW_CELL_SIZE = 15; // Default, will be recalculated
+    let CELL_SIZE = 40;
+    let PREVIEW_CELL_SIZE = 15;
     const NUM_PIECE_SLOTS = 3;
     const LINE_CLEAR_SCORE = GRID_WIDTH * 10;
     const MULTI_LINE_BONUS_MULTIPLIER = 1.5;
-    const REFRESH_PENALTY = 0; // Set a score penalty for manual refresh if desired (e.g., 50)
+    const REFRESH_PENALTY = 0;
 
-    // --- Piece Definitions (Keep as before) ---
+    // --- Piece Definitions (Complete) ---
     const PIECE_DEFINITIONS = [
         { shape: [[0, 0]], color: 'pink' }, // 1x1
         { shape: [[0, 0], [1, 0]], color: 'purple' }, // 2x1 vert
@@ -50,16 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
         { shape: [[1, 0], [0, 1], [1, 1], [2, 1]], color: 'pink' }, // T 2 (inverted T)
         { shape: [[0, 0], [0, 1], [0, 2], [0, 3]], color: 'pink'}, // 1x4
         { shape: [[0, 0], [1, 0], [2, 0], [3, 0]], color: 'purple'}, // 4x1
-        { shape: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]], color: 'pink'}, // 3x3 square!
+        { shape: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]], color: 'pink'} // 3x3 square!
     ];
 
     // --- Game State ---
     let gridState = [];
     let score = 0;
     let highScore = 0;
-    let currentPieces = []; // Array to hold the 3 available pieces (or null)
-    let draggedPieceIndex = null; // Index of the piece being dragged
-    let draggedPieceData = null; // Actual piece data being dragged
+    let currentPieces = [];
+    let draggedPieceIndex = null;
+    let draggedPieceData = null;
     let isGameOver = false;
     let hasUsedSecondChance = false;
 
@@ -72,58 +75,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Sound Utility ---
     function playSound(soundElement) {
         if (!soundElement || isSfxMuted || soundElement.readyState < 2) return;
-        soundElement.volume = sfxVolume; // Set volume before playing
+        soundElement.volume = sfxVolume;
         soundElement.currentTime = 0;
         soundElement.play().catch(e => console.warn("SFX play failed:", e));
     }
 
     // --- Audio Controls Logic ---
     function updateAudioSettings() {
-        // Music Mute
         bgMusic.muted = isMusicMuted;
-        muteMusicButton.textContent = isMusicMuted ? "Unmute Music" : "Mute Music";
+        muteMusicButton.textContent = isMusicMuted ? "Unmute" : "Mute"; // Shorter text
         localStorage.setItem('pastelPopMusicMuted', isMusicMuted);
-        if (!isMusicMuted && bgMusic.paused) { // Try to play if unmuted and paused
-           attemptMusicPlay();
+        if (!isMusicMuted && bgMusic.paused && !isGameOver && !secondChancePrompt.classList.contains('hidden') ) { // Only attempt play if not paused for game over/prompt
+            attemptMusicPlay();
         } else if (isMusicMuted && !bgMusic.paused) {
             bgMusic.pause();
         }
 
-        // Music Volume
         bgMusic.volume = musicVolume;
         musicVolumeSlider.value = musicVolume;
         localStorage.setItem('pastelPopMusicVolume', musicVolume);
 
-        // SFX Mute
-        muteSfxButton.textContent = isSfxMuted ? "Unmute SFX" : "Mute SFX";
+        muteSfxButton.textContent = isSfxMuted ? "Unmute" : "Mute"; // Shorter text
         localStorage.setItem('pastelPopSfxMuted', isSfxMuted);
 
-        // SFX Volume
         sfxVolumeSlider.value = sfxVolume;
         localStorage.setItem('pastelPopSfxVolume', sfxVolume);
-        // Test sound with new volume (optional)
-        // playSound(sfxPlace);
     }
 
     function attemptMusicPlay() {
-        if (isMusicMuted) return; // Don't play if muted
-        bgMusic.volume = musicVolume; // Ensure volume is set
+        if (isMusicMuted || isGameOver || !secondChancePrompt.classList.contains('hidden')) return; // Don't play if muted or game ended/paused
+        bgMusic.volume = musicVolume;
         const playPromise = bgMusic.play();
         if (playPromise !== undefined) {
             playPromise.then(_ => {
-                // Autoplay started!
                 console.log("Music playing.");
-                updateAudioSettings(); // Update button text
-            }).catch(error => {
-                // Autoplay was prevented.
-                console.warn("Music autoplay failed:", error);
-                // We can't force it, user needs to interact (e.g., click mute/unmute later)
-                updateAudioSettings(); // Ensure button reflects paused state potentially
+                updateAudioSettings(); // Update button text state
+            })
+            .catch(error => {
+                console.warn("Music autoplay/play failed:", error);
+                updateAudioSettings(); // Update button text state
             });
         }
     }
 
-
+    // Add listeners within the settings panel
     muteMusicButton.addEventListener('click', () => {
         isMusicMuted = !isMusicMuted;
         updateAudioSettings();
@@ -132,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         musicVolume = parseFloat(e.target.value);
         updateAudioSettings();
     });
-     muteSfxButton.addEventListener('click', () => {
+    muteSfxButton.addEventListener('click', () => {
         isSfxMuted = !isSfxMuted;
         updateAudioSettings();
     });
@@ -142,13 +137,40 @@ document.addEventListener('DOMContentLoaded', () => {
         playSound(sfxPlace); // Play a sound for feedback
     });
 
+
+    // --- Settings Panel Toggle Logic ---
+    function toggleSettingsPanel(show) {
+        const isHidden = settingsPanel.classList.contains('hidden');
+        if (show === undefined) { // Toggle
+            settingsPanel.classList.toggle('hidden');
+        } else if (show && isHidden) { // Show only if hidden
+            settingsPanel.classList.remove('hidden');
+        } else if (!show && !isHidden) { // Hide only if shown
+            settingsPanel.classList.add('hidden');
+        }
+    }
+    settingsToggleButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent click from closing immediately if using document listener
+        toggleSettingsPanel();
+    });
+    closeSettingsButton.addEventListener('click', () => toggleSettingsPanel(false));
+    // Optional: Close panel if clicking outside of it
+    document.addEventListener('click', (event) => {
+         // Check if the click is outside the panel and not on the toggle button
+        if (!settingsPanel.classList.contains('hidden') &&
+            !settingsPanel.contains(event.target) &&
+            event.target !== settingsToggleButton) {
+            toggleSettingsPanel(false);
+        }
+    });
+
+
     // --- High Score Functions ---
     function loadHighScore() {
-        const savedScore = localStorage.getItem('pastelPopHighScore');
+         const savedScore = localStorage.getItem('pastelPopHighScore');
         highScore = savedScore ? parseInt(savedScore, 10) : 0;
         highscoreDisplay.textContent = highScore;
     }
-
     function saveHighScore() {
         if (score > highScore) {
             highScore = score;
@@ -159,36 +181,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Grid/Piece Size Calculation ---
     function calculateSizes() {
-        const gameContainer = document.getElementById('game-container');
-        const availableWidth = gameContainer.offsetWidth;
-        const availableHeight = window.innerHeight * 0.8; // Use 80% of viewport height as rough guide
+        const appContainer = document.getElementById('app-container');
+        const topBar = document.getElementById('top-bar');
+        const bottomBar = document.getElementById('bottom-bar');
+        const gridContainer = document.getElementById('grid-container');
 
-        // Estimate grid size vs piece area size
-        // Let grid take ~60% of width on desktop, maybe 95% on mobile
-        let gridTargetWidth = availableWidth * 0.6;
-        if (window.innerWidth < 768) {
-            gridTargetWidth = availableWidth * 0.95;
-        }
+        // Use gridContainer's available space, which flex-grow manages
+        const availableHeight = gridContainer.clientHeight - 20; // Subtract vertical padding
+        const availableWidth = gridContainer.clientWidth - 20; // Subtract horizontal padding (if any)
 
-        // Calculate cell size based on width, limiting by height too
-        const sizeFromWidth = Math.floor(gridTargetWidth / GRID_WIDTH);
-        const sizeFromHeight = Math.floor(availableHeight / (GRID_HEIGHT + 2)); // Add buffer for score/etc.
+        // Calculate cell size based on the smaller dimension available for the grid
+        const sizeFromWidth = Math.floor(availableWidth / GRID_WIDTH);
+        const sizeFromHeight = Math.floor(availableHeight / GRID_HEIGHT);
 
-        CELL_SIZE = Math.max(20, Math.min(sizeFromWidth, sizeFromHeight, 50)); // Min 20px, Max 50px
+        CELL_SIZE = Math.max(15, Math.min(sizeFromWidth, sizeFromHeight, 50)); // Min 15px, Max 50px
 
         // Calculate preview size relative to cell size
-        PREVIEW_CELL_SIZE = Math.max(10, Math.floor(CELL_SIZE * 0.4));
+        PREVIEW_CELL_SIZE = Math.max(8, Math.floor(CELL_SIZE * 0.4));
+
+        console.log(`Calculated CELL_SIZE: ${CELL_SIZE}, PREVIEW_CELL_SIZE: ${PREVIEW_CELL_SIZE}`);
     }
 
     // --- Initialization Functions ---
     function createGrid() {
-        calculateSizes(); // Recalculate sizes based on current screen
+        // calculateSizes(); // Called before createGrid in startGame/resize
         gridBoard.innerHTML = '';
         gridBoard.style.gridTemplateColumns = `repeat(${GRID_WIDTH}, ${CELL_SIZE}px)`;
         gridBoard.style.gridTemplateRows = `repeat(${GRID_HEIGHT}, ${CELL_SIZE}px)`;
-        const boardSize = GRID_WIDTH * CELL_SIZE + 6; // Account for border
-        gridBoard.style.width = `${boardSize}px`;
-        gridBoard.style.height = `${boardSize}px`; // Make it square based on width
+        const boardBorderSize = 6; // 2 * 3px border
+        gridBoard.style.width = `${GRID_WIDTH * CELL_SIZE + boardBorderSize}px`;
+        gridBoard.style.height = `${GRID_HEIGHT * CELL_SIZE + boardBorderSize}px`;
 
         gridState = Array(GRID_HEIGHT).fill(null).map(() => Array(GRID_WIDTH).fill(null));
 
@@ -200,20 +222,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.dataset.col = c;
                 cell.style.width = `${CELL_SIZE}px`;
                 cell.style.height = `${CELL_SIZE}px`;
-
-                // --- DRAG AND DROP (GRID CELL LISTENERS) ---
+                // Add DnD listeners
                 cell.addEventListener('dragover', handleDragOver);
                 cell.addEventListener('dragleave', handleDragLeave);
                 cell.addEventListener('drop', handleDrop);
-                // --- END DRAG AND DROP ---
-
                 gridBoard.appendChild(cell);
             }
         }
     }
 
     function getRandomPiece() {
-        const randomIndex = Math.floor(Math.random() * PIECE_DEFINITIONS.length);
+         const randomIndex = Math.floor(Math.random() * PIECE_DEFINITIONS.length);
         // Deep clone to avoid modifying the original definitions
         return JSON.parse(JSON.stringify(PIECE_DEFINITIONS[randomIndex]));
     }
@@ -225,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentPieces.push(getRandomPiece());
             }
         } else {
-            // Only fill empty slots (original logic, less used now)
+            // Only fill empty slots (less common now)
             for (let i = 0; i < NUM_PIECE_SLOTS; i++) {
                 if (!currentPieces[i]) {
                     currentPieces[i] = getRandomPiece();
@@ -233,12 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         renderPiecePreviews();
-        // Check game over *after* getting pieces (is done after placement or refresh)
+        // Check game over *after* getting pieces (done in placement/refresh logic)
     }
 
     // --- Rendering Functions ---
     function renderGrid() {
-        const cells = gridBoard.querySelectorAll('.cell');
+       const cells = gridBoard.querySelectorAll('.cell');
         cells.forEach(cell => {
             const r = parseInt(cell.dataset.row);
             const c = parseInt(cell.dataset.col);
@@ -260,15 +279,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (piece === null) {
                 pieceContainer.classList.add('occupied');
                 pieceContainer.innerHTML = '✓'; // Simple checkmark
-                // Make non-draggable
                 pieceContainer.setAttribute('draggable', 'false');
             } else {
                 pieceContainer.dataset.index = index;
-                // --- DRAG AND DROP (PIECE LISTENERS) ---
                 pieceContainer.setAttribute('draggable', 'true');
                 pieceContainer.addEventListener('dragstart', handleDragStart);
                 pieceContainer.addEventListener('dragend', handleDragEnd);
-                // --- END DRAG AND DROP ---
 
                 let maxR = 0, maxC = 0;
                 piece.shape.forEach(([dr, dc]) => {
@@ -276,26 +292,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     maxC = Math.max(maxC, dc);
                 });
 
-                 const minPreviewSize = PREVIEW_CELL_SIZE * 2.5;
+                 const minPreviewSize = PREVIEW_CELL_SIZE * 2; // Adjust min size based on smaller preview cells
                  pieceContainer.style.minWidth = `${minPreviewSize}px`;
                  pieceContainer.style.minHeight = `${minPreviewSize}px`;
 
                 pieceContainer.style.gridTemplateRows = `repeat(${maxR + 1}, ${PREVIEW_CELL_SIZE}px)`;
                 pieceContainer.style.gridTemplateColumns = `repeat(${maxC + 1}, ${PREVIEW_CELL_SIZE}px)`;
 
+                // Create a temporary grid for placing preview cells
                 const previewGrid = {};
                 piece.shape.forEach(([dr, dc]) => {
                     if (!previewGrid[dr]) previewGrid[dr] = {};
                     previewGrid[dr][dc] = true;
                 });
 
+                // Fill the piece container grid
                 for (let r = 0; r <= maxR; r++) {
                     for (let c = 0; c <= maxC; c++) {
                         const cell = document.createElement('div');
                         cell.classList.add('piece-cell');
                          cell.style.width = `${PREVIEW_CELL_SIZE}px`;
                          cell.style.height = `${PREVIEW_CELL_SIZE}px`;
-                        if (previewGrid[r]?.[c]) {
+                        if (previewGrid[r]?.[c]) { // Check if this cell should be filled
                             cell.classList.add(`filled-${piece.color}`);
                         }
                         pieceContainer.appendChild(cell);
@@ -308,8 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateScore(points) {
         score += points;
-        // Ensure score doesn't go below 0 (e.g., from penalty)
-        if (score < 0) score = 0;
+        if (score < 0) score = 0; // Ensure score doesn't go below 0
         scoreDisplay.textContent = score;
         saveHighScore(); // Check and save if it's a new high score
     }
@@ -334,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         piece.shape.forEach(([dr, dc]) => {
             const r = startRow + dr;
             const c = startCol + dc;
-             if (gridState[r] !== undefined) {
+             if (gridState[r] !== undefined) { // Ensure row exists
                  gridState[r][c] = piece.color;
                  cellsFilled++;
              }
@@ -351,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check rows
         for (let r = 0; r < GRID_HEIGHT; r++) {
-            if (gridState[r]?.every(cell => cell !== null)) {
+            if (gridState[r]?.every(cell => cell !== null)) { // Safe optional chaining
                 rowsToClear.push(r);
                  for(let c = 0; c < GRID_WIDTH; c++) clearedCells.add(`${r}-${c}`);
             }
@@ -360,14 +377,17 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let c = 0; c < GRID_WIDTH; c++) {
             let colFull = true;
             for (let r = 0; r < GRID_HEIGHT; r++) {
-                if (gridState[r]?.[c] === null) {
+                if (gridState[r]?.[c] === null) { // Safe optional chaining
                     colFull = false;
                     break;
                 }
             }
             if (colFull) {
                 colsToClear.push(c);
-                 for(let r = 0; r < GRID_HEIGHT; r++) clearedCells.add(`${r}-${c}`); // Ensure row exists (should)
+                 for(let r = 0; r < GRID_HEIGHT; r++) {
+                     // Only add if row exists (it should, but safe check)
+                     if(gridState[r] !== undefined) clearedCells.add(`${r}-${c}`);
+                 }
             }
         }
 
@@ -376,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (totalLinesCleared > 0) {
             playSound(sfxClear);
 
-             // --- Visual Flash ---
+             // Visual Flash
             clearedCells.forEach(coord => {
                 const [r, c] = coord.split('-').map(Number);
                 const cellElement = gridBoard.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
@@ -387,14 +407,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Calculate Score
             let lineScore = totalLinesCleared * LINE_CLEAR_SCORE;
+            // More rewarding bonus for multi-line clears
             let bonusScore = (totalLinesCleared > 1)
-                ? Math.round(Math.pow(MULTI_LINE_BONUS_MULTIPLIER, totalLinesCleared -1) * lineScore) // Exponential bonus
+                ? Math.round(Math.pow(MULTI_LINE_BONUS_MULTIPLIER, totalLinesCleared -1) * lineScore)
                 : 0;
             console.log(`Cleared ${totalLinesCleared} lines. Score: +${lineScore}, Bonus: +${bonusScore}`);
             updateScore(lineScore + bonusScore);
 
 
-            // --- Clear State and Remove Animation (after delay) ---
+            // Clear State and Remove Animation (after delay)
             setTimeout(() => {
                 clearedCells.forEach(coord => {
                     const [r, c] = coord.split('-').map(Number);
@@ -402,7 +423,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const cellElement = gridBoard.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
                      if (cellElement) {
                         cellElement.classList.remove('clearing'); // Remove animation class
-                        // cellElement.className = 'cell'; // Force re-render look (if needed)
                      }
                  });
                  renderGrid(); // Re-render the grid AFTER clearing state and removing flash
@@ -431,34 +451,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function triggerGameOverSequence() {
-        // Check if any piece can be placed
+        // If moves are still possible, exit
         if (canAnyPieceBePlaced()) {
-            // False alarm, should not happen if called correctly, but good safeguard
-            console.log("Game over check called, but moves are available.");
             isGameOver = false; // Ensure flag is correct
+             // Make sure interaction is enabled if we got here erroneously
+            gridBoard.style.pointerEvents = 'auto';
+            document.getElementById('bottom-bar').style.pointerEvents = 'auto';
             return;
         }
 
-        // --- Actual Game Over Condition ---
+        // --- No Moves Left ---
+        console.log("No valid moves detected.");
+
+        // Disable interaction with grid/pieces/refresh
+        gridBoard.style.pointerEvents = 'none';
+        document.getElementById('bottom-bar').style.pointerEvents = 'none'; // Disable whole bottom bar
+
         if (!hasUsedSecondChance) {
             // Offer Second Chance
-            console.log("No moves left. Offering second chance.");
-            secondChancePrompt.classList.remove('hidden');
+            console.log("Offering second chance.");
+            secondChancePrompt.classList.remove('hidden'); // Show prompt
             if (!bgMusic.paused) bgMusic.pause(); // Pause music for prompt
-            // Disable interaction with board/pieces while prompt is up
-             gridBoard.style.pointerEvents = 'none';
-             piecesContainer.style.pointerEvents = 'none';
         } else {
             // Final Game Over (already used second chance or declined)
             console.log("Game Over! No more chances.");
             isGameOver = true;
             finalScoreDisplay.textContent = score;
-            gameOverDisplay.classList.remove('hidden');
+            gameOverDisplay.classList.remove('hidden'); // Show final game over
             playSound(sfxGameOver);
-            if (!bgMusic.paused) bgMusic.pause();
+            if (!bgMusic.paused) bgMusic.pause(); // Ensure music is paused
             saveHighScore(); // Save high score at the very end
-             gridBoard.style.pointerEvents = 'none'; // Disable board
-             piecesContainer.style.pointerEvents = 'none';
         }
     }
 
@@ -467,68 +489,93 @@ document.addEventListener('DOMContentLoaded', () => {
     // DRAG AND DROP HANDLERS
     function handleDragStart(event) {
         const target = event.target.closest('.piece-container');
-        if (!target || target.classList.contains('occupied')) {
+        if (!target || target.classList.contains('occupied') || isGameOver) {
             event.preventDefault();
             return;
         }
+        // Ensure settings panel is closed when starting drag
+        toggleSettingsPanel(false);
+
         draggedPieceIndex = parseInt(target.dataset.index);
         draggedPieceData = currentPieces[draggedPieceIndex]; // Store the actual piece object
 
-        // Optional: Add a class for visual feedback while dragging
-        target.classList.add('dragging');
+        // Add visual feedback class slightly delayed to ensure rendering
+        setTimeout(() => target.classList.add('dragging'), 0);
 
-        // Set data (can be simple like the index)
         event.dataTransfer.setData('text/plain', draggedPieceIndex);
         event.dataTransfer.effectAllowed = 'move';
-
-        // Optional: Customize drag image (can be complex)
-        // event.dataTransfer.setDragImage(customImage, 0, 0);
     }
 
     function handleDragEnd(event) {
-        // Remove dragging class from original piece preview
-        const target = event.target.closest('.piece-container');
-        if(target) target.classList.remove('dragging');
+        // This event fires even if the drop was unsuccessful or outside a valid target
 
-        // Clear preview on the grid board regardless of drop success
-        clearPlacementPreview();
-        draggedPieceIndex = null; // Reset dragged index state
-        draggedPieceData = null;  // Reset dragged data state
+        // Remove dragging class from original piece preview
+         // Use event.target which should be the element dragstart originated from
+        const target = event.target.closest('.piece-container');
+        if(target) {
+            target.classList.remove('dragging');
+        } else {
+             // Fallback if target isn't found directly (might happen in some edge cases)
+             const draggingElement = piecesContainer.querySelector('.dragging');
+             if (draggingElement) draggingElement.classList.remove('dragging');
+        }
+
+
+        // Clear preview on the grid board if drag ended without a successful drop
+        // Check if dropEffect was 'none', indicating unsuccessful drop
+        if(event.dataTransfer.dropEffect === 'none'){
+            clearPlacementPreview();
+        }
+
+        // Reset dragged state variables AFTER potential drop handler has used them
+        draggedPieceIndex = null;
+        draggedPieceData = null;
     }
 
     function handleDragOver(event) {
         event.preventDefault(); // Necessary to allow dropping
+        if (!draggedPieceData || isGameOver) return; // Need dragged piece info and game not over
+
         event.dataTransfer.dropEffect = 'move';
 
         const cell = event.target.closest('.cell');
-        if (!cell || !draggedPieceData) return; // Need target cell and dragged piece info
+        if (!cell) {
+             clearPlacementPreview(); // Clear preview if not over a cell
+             return;
+        };
 
         const r = parseInt(cell.dataset.row);
         const c = parseInt(cell.dataset.col);
 
-        clearPlacementPreview(); // Clear previous preview
+        // Avoid clearing and re-showing if over the same cell (potential optimization)
+        // if(cell === lastHoveredCell) return;
+        // lastHoveredCell = cell; // Need to declare lastHoveredCell globally
+
+        clearPlacementPreview(); // Clear previous preview first
         showPlacementPreview(draggedPieceData, r, c); // Show preview at current drag location
     }
 
     function handleDragLeave(event) {
-        // Clear preview ONLY if leaving the grid entirely or moving to a non-cell element
-         const cell = event.target.closest('.cell');
+        // Clear preview ONLY if leaving the grid board entirely
+         const gridContainer = document.getElementById('grid-container');
          const relatedTarget = event.relatedTarget;
-         if (cell && (!relatedTarget || !relatedTarget.closest('.cell'))) {
-            // If the mouse leaves a cell and doesn't enter another cell immediately
-            // (Could also check if leaving the bounds of #grid-board)
+
+         // Check if the relatedTarget (where the mouse entered) is outside the grid-board
+         if (!relatedTarget || !gridContainer.contains(relatedTarget)) {
             clearPlacementPreview();
+            // lastHoveredCell = null; // Reset if using optimization
          }
     }
 
     function handleDrop(event) {
-        event.preventDefault(); // Prevent default browser action (like opening link)
-        clearPlacementPreview(); // Clear preview visual
+        event.preventDefault(); // Prevent default browser action
+        clearPlacementPreview(); // Clear preview visual on drop
 
         const cell = event.target.closest('.cell');
-        if (!cell || draggedPieceIndex === null || !draggedPieceData) {
-             console.log("Drop failed: No cell or dragged piece info.");
-             return; // Invalid drop target or no piece being dragged
+        // Check if drop is valid (on cell, piece was dragged, game not over)
+        if (!cell || draggedPieceIndex === null || !draggedPieceData || isGameOver) {
+             console.log("Drop failed: Invalid target or state.");
+             return;
         }
 
         const r = parseInt(cell.dataset.row);
@@ -565,19 +612,25 @@ document.addEventListener('DOMContentLoaded', () => {
                      }, linesWereCleared ? 350 : 50); // Longer delay if lines cleared
                 } else {
                     // If some pieces remain, check if any *remaining* piece can be placed
-                    triggerGameOverSequence();
+                     // Needs a slight delay to allow render after line clear?
+                    setTimeout(() => {
+                         triggerGameOverSequence();
+                    }, linesWereCleared ? 350 : 50);
                 }
+            } else {
+                 // placePiece returned false, shouldn't happen if isValidPlacement passed, but log just in case
+                 console.error("placePiece failed after isValidPlacement passed.");
             }
         } else {
             console.log("Placement invalid at:", r, c);
-            // Optional: Add brief visual feedback for invalid drop (e.g., shake board)
+            // Add brief visual feedback for invalid drop
             gridBoard.classList.add('shake');
             setTimeout(() => gridBoard.classList.remove('shake'), 300);
         }
 
-        // Reset drag state variables (redundant with dragEnd but safe)
-        draggedPieceIndex = null;
-        draggedPieceData = null;
+        // Reset drag state variables - handled by dragEnd now
+        // draggedPieceIndex = null;
+        // draggedPieceData = null;
     }
     // END DRAG AND DROP HANDLERS
 
@@ -588,39 +641,43 @@ document.addEventListener('DOMContentLoaded', () => {
         piece.shape.forEach(([dr, dc]) => {
             const r = startRow + dr;
             const c = startCol + dc;
+            // Check bounds only here, validity class handles filled cells
             if (r >= 0 && r < GRID_HEIGHT && c >= 0 && c < GRID_WIDTH) {
                 const targetCell = gridBoard.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
-                if (targetCell && !targetCell.className.includes('filled')) { // Preview only on empty cells
-                    targetCell.classList.add('preview');
-                    if (!isValid) {
-                        targetCell.classList.add('invalid');
-                    }
-                } else if (targetCell) {
-                     // Cell is filled, mark preview as invalid implicitly?
-                     // Or add a specific class if needed. For now, rely on isValid.
-                     // If the anchor cell itself is invalid, show the invalid preview
-                     if (!isValid && dr === 0 && dc === 0) {
-                         targetCell.classList.add('preview', 'invalid');
+                if (targetCell) {
+                     // Add preview class regardless
+                     targetCell.classList.add('preview');
+                     // Add invalid class ONLY if the placement is generally invalid
+                     // OR if this specific target cell is already filled
+                     if (!isValid || gridState[r]?.[c] !== null) {
+                         targetCell.classList.add('invalid');
                      }
                 }
             }
         });
     }
 
+
     function clearPlacementPreview() {
         gridBoard.querySelectorAll('.cell.preview').forEach(cell => {
             cell.classList.remove('preview', 'invalid');
         });
+        // lastHoveredCell = null; // Reset if using optimization
     }
 
     // --- Refresh Button / Second Chance Logic ---
     function handleRefreshPieces(isSecondChance = false) {
          if (isGameOver) return; // Cannot refresh if already game over final
 
-         // Don't refresh if there are still moves unless it's the forced second chance
+         // Hide modals if they are open (e.g., second chance prompt)
+        secondChancePrompt.classList.add('hidden');
+
+         // Don't allow manual refresh if moves are available
          if (!isSecondChance && canAnyPieceBePlaced()) {
              console.log("Manual refresh attempted, but moves are available.");
-             // Optionally add feedback: "Moves still available!"
+             // Optionally add feedback: "Moves still available!" - maybe flash refresh button red?
+             refreshButton.classList.add('shake'); // Re-use shake animation
+             setTimeout(() => refreshButton.classList.remove('shake'), 300);
              return;
          }
 
@@ -633,10 +690,9 @@ document.addEventListener('DOMContentLoaded', () => {
          console.log("Refreshing pieces...");
          if (isSecondChance) {
              hasUsedSecondChance = true; // Mark second chance as used
-             secondChancePrompt.classList.add('hidden'); // Hide prompt
-             // Re-enable board/pieces interaction
+             // Re-enable interactions that were disabled by triggerGameOverSequence
              gridBoard.style.pointerEvents = 'auto';
-             piecesContainer.style.pointerEvents = 'auto';
+             document.getElementById('bottom-bar').style.pointerEvents = 'auto';
              if (!isMusicMuted) attemptMusicPlay(); // Resume music maybe
          }
 
@@ -645,7 +701,6 @@ document.addEventListener('DOMContentLoaded', () => {
          generateNewPieces(true);
 
          // Check if the NEW set leads to game over immediately
-         // Need a slight delay to allow DOM update before check? Maybe not.
          triggerGameOverSequence(); // This will handle final game over if needed
     }
 
@@ -655,9 +710,9 @@ document.addEventListener('DOMContentLoaded', () => {
     secondChanceNoButton.addEventListener('click', () => {
         // User declined second chance
         console.log("Second chance declined.");
-        secondChancePrompt.classList.add('hidden');
+        secondChancePrompt.classList.add('hidden'); // Hide prompt
         hasUsedSecondChance = true; // Mark as used (or declined counts as used)
-        triggerGameOverSequence(); // Proceed to final game over
+        triggerGameOverSequence(); // Proceed immediately to final game over check/display
     });
     restartButton.addEventListener('click', startGame); // Restart the game
 
@@ -666,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Starting new game...");
         isGameOver = false;
         hasUsedSecondChance = false; // Reset second chance flag
-        gridState = [];
+        gridState = []; // Clear grid state
         score = 0;
         loadHighScore(); // Load high score from storage
         currentPieces = []; // Ensure pieces are cleared
@@ -676,15 +731,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide modals, update score display
         gameOverDisplay.classList.add('hidden');
         secondChancePrompt.classList.add('hidden');
+        toggleSettingsPanel(false); // Ensure settings panel is closed
         updateScore(0); // Resets display to 0 and updates high score display if needed
 
-        createGrid(); // Create grid (recalculates size)
-        generateNewPieces(true); // Get initial pieces
+        calculateSizes(); // Calculate sizes based on current viewport FIRST
+        createGrid(); // Create grid structure
+        generateNewPieces(true); // Get initial pieces (calls renderPiecePreviews)
         renderGrid(); // Render the initial empty grid state
 
         // Enable interactions
         gridBoard.style.pointerEvents = 'auto';
-        piecesContainer.style.pointerEvents = 'auto';
+        document.getElementById('bottom-bar').style.pointerEvents = 'auto';
 
         updateAudioSettings(); // Apply loaded audio settings
         attemptMusicPlay(); // Try to play music (respects mute state)
@@ -693,20 +750,20 @@ document.addEventListener('DOMContentLoaded', () => {
         triggerGameOverSequence();
     }
 
-    // --- Initial Setup ---
-    startGame(); // Start the game when the DOM is ready
-
-    // Re-calculate sizes on window resize (optional, but good for responsiveness)
+    // --- Resize Handling ---
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
-            console.log("Resizing, recalculating grid...");
-             // Re-create grid and render (preserves state)
-             createGrid(); // This recalculates sizes
-             renderGrid(); // Re-render existing state
-             renderPiecePreviews(); // Re-render previews with new size
+            console.log("Resizing, recalculating layout...");
+            calculateSizes(); // Recalculate cell sizes
+            createGrid(); // Recreate grid with new sizes
+            renderGrid(); // Render current state onto new grid
+            renderPiecePreviews(); // Render previews with new sizes
         }, 250); // Debounce resize event
     });
+
+    // --- Initial Setup ---
+    startGame(); // Start the game when the DOM is ready
 
 }); // End DOMContentLoaded
